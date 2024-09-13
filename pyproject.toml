@@ -21,6 +21,7 @@ nltk = "^3.9.1"
 docx = "^0.2.4"
 beautifulsoup4 = "^4.12.3"
 requests = "^2.32.3"
+striprtf = "^0.0.26"
 
 
 [build-system]
