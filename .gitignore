@@ -1,2 +1,6 @@
 .env
 model
+notebooks/
+src/
+test/
+data/
