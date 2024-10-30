@@ -1,6 +1,6 @@
 .env
 model
 notebooks/
-
+.streamlit/secrets.toml
 test/
 data/

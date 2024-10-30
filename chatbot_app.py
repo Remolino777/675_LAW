@@ -237,7 +237,7 @@ if prompt:
             response = llm_interaction(query=prompt, vector_store=vs, _driver=driver, _llm=llm)
             
             # Preparar la respuesta completa con el disclaimer
-            disclaimer = "\n\n\n **Este chatbot no reemplaza el asesoramiento legal profesional ni el juicio de un abogado licenciado. La consulta con un abogado es esencial para recibir un análisis exhaustivo de cualquier situación legal.**"
+            disclaimer = "\n\n\n *Este chatbot no reemplaza el asesoramiento legal profesional ni el juicio de un abogado licenciado. La consulta con un abogado es esencial para recibir un análisis exhaustivo de cualquier situación legal.*"
             
             full_response = f"<div style='font-size: 18px;'>{response}{disclaimer}</div>"
             
