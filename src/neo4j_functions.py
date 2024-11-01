@@ -130,18 +130,78 @@ def vector_store(uri, username, password):
     )
     return vector_store
     
-def llm_interaction(query, vector_store, driver, llm):
+def llm_interaction(query: str, vector_store, driver, llm) -> str:
     '''
-    driver= conexion a neo4j
-    vector_store=los embeddings almacenados
-    query=pregunta a realizar
-    llm = modelo generativo definido, en este caso sera giminie flash
+    Función que procesa una consulta legal utilizando Neo4j y un modelo de lenguaje
+
+    Args:
+        query (str): Pregunta del usuario
+        vector_store: Vector store con los embeddings almacenados
+        driver: Conexión a Neo4j
+        llm: Modelo generativo (Gemini)
+
+    Returns:
+        str: Respuesta generada por el modelo
+    
+    Raises:
+        ValueError: Si no se encuentran resultados similares
+        Exception: Para otros errores durante el proceso
     '''
-    node = vector_store.similarity_search(query, k=1)
-    id = node[0].metadata.get('pregunta_id')
-    print(id)
-    response = get_related_nodes(session=driver.session(),pregunta_id=id)
-    my_prompt = f"Sos un asistente legal especializado en la ley 675 de Colombia y usando el siguiente contexto: {response} responde la siguiente pregunta:{query} de la manera mas detallada posible y si aplica utiliza algun ejemplo y al finalizar invita al usuario a volver a preguntar"
-    ans = llm.generate_content(my_prompt)
-    return ans.text    
+    try:
+        # Realizar búsqueda de similaridad
+        results = vector_store.similarity_search_with_score(query, k=1)
+        
+        if not results:
+            raise ValueError("No se encontraron resultados similares")
+        
+        # Desempaquetar el primer resultado
+        doc, similarity_score = results[0]
+        
+        # Verificar si el score está por debajo de un umbral mínimo
+        MIN_SIMILARITY_THRESHOLD = 0.8
+        if similarity_score < MIN_SIMILARITY_THRESHOLD:
+            print(f"Advertencia: Baja similaridad ({similarity_score})")
+            response ='''
+            Recuerda que tu pregunta tiene que estar relacionada con la ley 675 de Colombia. 
+            Ademas procura hacer una pregunta a la vez para darte una respuesta mas clara
+            '''
+            return response
+        
+        # Obtener el ID de la pregunta
+        pregunta_id = doc.metadata.get('pregunta_id')
+        if not pregunta_id:
+            raise ValueError("No se encontró el ID de la pregunta en los metadatos")
+            
+        print(f"ID Pregunta: {pregunta_id}, Score: {similarity_score}")
+        
+        # Obtener nodos relacionados de Neo4j
+        with driver.session() as session:
+            contexto = get_related_nodes(session=session, pregunta_id=pregunta_id)
+            
+            if not contexto:
+                raise ValueError(f"No se encontró contexto para la pregunta ID {pregunta_id}")
+        
+        # Construir el prompt
+        prompt = f"""Sos un asistente legal especializado en la ley 675 de Colombia.
+        
+Contexto relevante:
+{contexto}
+
+Pregunta del usuario:
+{query}
+
+Por favor, proporciona una respuesta detallada. Si es aplicable, incluye ejemplos prácticos.
+Al finalizar, invita al usuario a realizar más preguntas sobre la ley 675."""
+
+        # Generar respuesta
+        response = llm.generate_content(prompt)
+        
+        return response.text
+        
+    except ValueError as ve:
+        return f"Lo siento, no pude procesar tu pregunta: {str(ve)}"
+    except Exception as e:
+        print(f"Error en llm_interaction: {str(e)}")
+        return "Lo siento, ocurrió un error al procesar tu pregunta. Por favor, intenta reformularla."
+   
 
