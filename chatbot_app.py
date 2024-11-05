@@ -204,6 +204,8 @@ driver = create_neo4j_driver(uri=URI, user=NEO4J_USER,password=NEO4J_PASSWORD)
 #Load llm model ''gemini-1.5-flash-latest'' 
 llm = get_generative_model(api_key=G_KEY, model_name='gemini-1.5-flash-latest', temperature=0.3, top_p=0.95, top_k=5, max_output_tokens=8192, response_mime_type="text/plain")
 
+
+
 st.sidebar.title('Asistente legal de propiedad horizontal (Ley 675)')
 st.sidebar.image('Corte_Suprema_de_Justicia_de_Colombia.svg.png')
     
